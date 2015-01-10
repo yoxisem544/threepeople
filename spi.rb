@@ -31,7 +31,7 @@ class Spider
     # 一一點進去YO
     @time_start = Time.now
     10.times do |page|
-      sleep 1.0
+      sleep 1
       puts "now on collection #{page}"
 
       r = RestClient.get @query_url + (page).to_s
@@ -40,7 +40,7 @@ class Spider
       
       # get every page in collection
       query_page.css('td.weblblue13_2').each_with_index do |row, index|
-        sleep 1.0
+        sleep 1
         # get url
         puts index, row.css('a').first['href']
         puts @query_url + row.css('a').first['href'].to_s
@@ -55,22 +55,32 @@ class Spider
           
         pages.times do |page|
           puts "now on small #{page+1}"
-          sleep 1
+          sleep 0.3
           r = RestClient.get @front_url + row.css('a').first['href'].to_s + @end_url + (page+1).to_s
           ic = Iconv.new("utf-8//translit//IGNORE","utf-8")
           small_hello = Nokogiri::HTML(ic.iconv(r.to_s))
 
           small_hello.css('td.blue16').each_with_index do |row, index|
-            sleep 0.4
+            puts "time passed: #{Time.now-@time_start} seconds"
+            sleep 0.1
             puts row.css('a').first['href']
             # get detail page here
             r = RestClient.get @front_url + row.css('a').first['href'].to_s
             ic = Iconv.new("utf-8//translit//IGNORE","utf-8")
-            detail_hello = Nokogiri::HTML(ic.iconv(r.to_s))
+            @detail_hello = Nokogiri::HTML(ic.iconv(r.to_s))
 
-            puts detail_hello.css('span.ProdName').text
+            puts @detail_hello.css('span.ProdName').text
+            # fail rescue
+            while @detail_hello.css('span.ProdName').text == ""
+              puts "something wrong, retrying...."
+              r = RestClient.get @front_url + row.css('a').first['href'].to_s
+              ic = Iconv.new("utf-8//translit//IGNORE","utf-8")
+              @detail_hello = Nokogiri::HTML(ic.iconv(r.to_s))
+              puts "retry and get " + @detail_hello.css('span.ProdName').text
+            end
+            
             # every list
-            @book_name = detail_hello.css('span.ProdName').text
+            @book_name = @detail_hello.css('span.ProdName').text
             @series = "" 
             @isbn13 = "" 
             @another_book_name = "" 
@@ -80,7 +90,7 @@ class Spider
             @size = ""
             @publish_store = "" 
             @publish_date = "" 
-            detail_hello.css('ul.ProdInfo li').each_with_index do |row, index|
+            @detail_hello.css('ul.ProdInfo li').each_with_index do |row, index|
               if row.text.rpartition('：').first == "作者"
                 @author = row.text.rpartition('：').last
               elsif row.text.rpartition('：').first.rpartition(' ').last == "系列名"
