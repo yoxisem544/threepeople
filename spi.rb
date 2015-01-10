@@ -71,11 +71,18 @@ class Spider
 
             # puts @detail_hello.css('span.ProdName').text
             # fail rescue
+            @retry_time = 0
             while @detail_hello.css('span.ProdName').text == ""
               print "🌀 "
               r = RestClient.get @front_url + row.css('a').first['href'].to_s
               ic = Iconv.new("utf-8//translit//IGNORE","utf-8")
               @detail_hello = Nokogiri::HTML(ic.iconv(r.to_s))
+              @retry_time += 1
+              if @retry_time == 20
+                puts "fuck. caught DDOS.......😨 😨 😨 "
+                sleep 10
+                @retry_time = 0
+              end
             end
             puts "", "📕 " + @detail_hello.css('span.ProdName').text + " -------- fucking ya!"
 
