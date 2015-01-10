@@ -27,6 +27,8 @@ class Spider
   def get_books
   	# 初始 courses 陣列
     @books = []
+    @all_books = 0
+    @retry_list = []
     puts "getting books...\n"
     # 一一點進去YO
     @time_start = Time.now
@@ -62,7 +64,6 @@ class Spider
 
           small_hello.css('td.blue16').each_with_index do |row, index|
             puts "🕓 time passed => #{Time.now-@time_start} seconds"
-            sleep 0.1
             # puts row.css('a').first['href']
             # get detail page here
             r = RestClient.get @front_url + row.css('a').first['href'].to_s
@@ -74,15 +75,21 @@ class Spider
             @retry_time = 0
             while @detail_hello.css('span.ProdName').text == ""
               print "🌀 "
+              sleep 0.15
               r = RestClient.get @front_url + row.css('a').first['href'].to_s
               ic = Iconv.new("utf-8//translit//IGNORE","utf-8")
               @detail_hello = Nokogiri::HTML(ic.iconv(r.to_s))
               @retry_time += 1
-              if @retry_time == 20
-                puts "fuck. caught DDOS.......😨 😨 😨 "
-                sleep 10
-                @retry_time = 0
+              if @retry_time == 100
+                puts "seem something wrong.......😨 😨 😨 "
+                @detail_hello.css('div td td:nth-of-type(2)').text
+                break
               end
+            end
+            if @retry_time == 20
+              @retry_list << (@front_url + row.css('a').first['href'].to_s)
+              puts "adding to retry list"
+              next
             end
             puts "", "📕 " + @detail_hello.css('span.ProdName').text + " -------- fucking ya!"
 
@@ -131,6 +138,8 @@ class Spider
                 :publish_store => @publish_store,
                 :publish_date => @publish_date
               }).to_hash
+            @all_books += 1
+            puts "#{@all_books}  📔 "
             # puts @series,@isbn13,@another_book_name,@author,@page_covering,@edition,@size,@publish_store,@publish_date
           end
         end
@@ -148,6 +157,7 @@ class Spider
 
   def save_to(filename='courses_p1.json')
     File.open(filename, 'w') {|f| f.write(JSON.pretty_generate(@books))}
+    File.open('retry_list.json', 'w') {|f| f.write(JSON.pretty_generate(@retry_list))}
   end
     
 end
