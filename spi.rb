@@ -61,24 +61,24 @@ class Spider
           small_hello = Nokogiri::HTML(ic.iconv(r.to_s))
 
           small_hello.css('td.blue16').each_with_index do |row, index|
-            puts "time passed: #{Time.now-@time_start} seconds"
+            puts "🕓 time passed => #{Time.now-@time_start} seconds"
             sleep 0.1
-            puts row.css('a').first['href']
+            # puts row.css('a').first['href']
             # get detail page here
             r = RestClient.get @front_url + row.css('a').first['href'].to_s
             ic = Iconv.new("utf-8//translit//IGNORE","utf-8")
             @detail_hello = Nokogiri::HTML(ic.iconv(r.to_s))
 
-            puts @detail_hello.css('span.ProdName').text
+            # puts @detail_hello.css('span.ProdName').text
             # fail rescue
             while @detail_hello.css('span.ProdName').text == ""
-              puts "something wrong, retrying...."
+              print "🌀 "
               r = RestClient.get @front_url + row.css('a').first['href'].to_s
               ic = Iconv.new("utf-8//translit//IGNORE","utf-8")
               @detail_hello = Nokogiri::HTML(ic.iconv(r.to_s))
-              puts "retry and get " + @detail_hello.css('span.ProdName').text
             end
-            
+            puts "", "📕 " + @detail_hello.css('span.ProdName').text + " -------- fucking ya!"
+
             # every list
             @book_name = @detail_hello.css('span.ProdName').text
             @series = "" 
