@@ -57,12 +57,13 @@ class Spider
           
         pages.times do |page|
           puts "now on small #{page+1}"
-          sleep 0.3
+          sleep 3.0
           r = RestClient.get @front_url + row.css('a').first['href'].to_s + @end_url + (page+1).to_s
           ic = Iconv.new("utf-8//translit//IGNORE","utf-8")
           small_hello = Nokogiri::HTML(ic.iconv(r.to_s))
 
           small_hello.css('td.blue16').each_with_index do |row, index|
+            sleep 0.4
             puts "🕓 time passed => #{Time.now-@time_start} seconds"
             # puts row.css('a').first['href']
             # get detail page here
@@ -75,18 +76,18 @@ class Spider
             @retry_time = 0
             while @detail_hello.css('span.ProdName').text == ""
               print "🌀 "
-              sleep 0.15
+              sleep 0.6
               r = RestClient.get @front_url + row.css('a').first['href'].to_s
               ic = Iconv.new("utf-8//translit//IGNORE","utf-8")
               @detail_hello = Nokogiri::HTML(ic.iconv(r.to_s))
               @retry_time += 1
-              if @retry_time == 100
+              if @retry_time == 5
                 puts "seem something wrong.......😨 😨 😨 "
                 @detail_hello.css('div td td:nth-of-type(2)').text
                 break
               end
             end
-            if @retry_time == 20
+            if @retry_time == 5
               @retry_list << (@front_url + row.css('a').first['href'].to_s)
               puts "adding to retry list"
               next
