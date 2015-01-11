@@ -60,9 +60,17 @@ class Spider
           sleep 3.0
           r = RestClient.get @front_url + row.css('a').first['href'].to_s + @end_url + (page+1).to_s
           ic = Iconv.new("utf-8//translit//IGNORE","utf-8")
-          small_hello = Nokogiri::HTML(ic.iconv(r.to_s))
+          @small_hello = Nokogiri::HTML(ic.iconv(r.to_s))
 
-          small_hello.css('td.blue16').each_with_index do |row, index|
+          while @small_hello.css('td.blue16').css('a').first['href'].to_s == ""
+            puts "page stuck..., retrying..."
+            sleep 1.0
+            r = RestClient.get @front_url + row.css('a').first['href'].to_s + @end_url + (page+1).to_s
+            ic = Iconv.new("utf-8//translit//IGNORE","utf-8")
+            @small_hello = Nokogiri::HTML(ic.iconv(r.to_s))
+          end
+
+          @small_hello.css('td.blue16').each_with_index do |row, index|
             sleep 0.4
             puts "🕓 time passed => #{Time.now-@time_start} seconds"
             # puts row.css('a').first['href']
